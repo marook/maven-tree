@@ -33,9 +33,17 @@ def parse_maven_module_from_pom(pom_path):
     if(artifact_id is None):
         raise Exception('Missing artifactId')
 
-    # TODO parse dependencies
+    maven_module = MavenModule(group_id, artifact_id)
 
-    return MavenModule(group_id, artifact_id)
+    maven_module.dependencies.update(parse_dependencies_from_pom(pom))
+
+    return maven_module
+
+def parse_dependencies_from_pom(pom):
+    for dependency_node in pom.findall('mvn:dependencies/mvn:dependency', MAVEN_NAMESPACES):
+        dep_group_id, dep_artifact_id = parse_artifact_ids_from_node(dependency_node)
+
+        yield MavenModule(dep_group_id, dep_artifact_id)
 
 def parse_artifact_ids_from_pom(pom):
     project_node = pom.getroot()
