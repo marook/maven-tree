@@ -1,6 +1,7 @@
 maven-tree - maven dependency tree graph builder
 
 1) Requirements
+2) Usage
 
 
 ------------------------------------------------------------------------
@@ -12,3 +13,15 @@ this:
 $ git clone https://github.com/hadim/pygraphml.git
 $ cd pygraphml/
 $ pip install .
+
+
+------------------------------------------------------------------------
+Usage
+
+$ python maven-tree.py output.graphml root_dirs
+
+
+------------------------------------------------------------------------
+License
+
+See file COPYING for details.
