@@ -1,8 +1,22 @@
 maven-tree - maven dependency tree graph builder
 
-1) Requirements
-2) Usage
-3) License
+1) Overview
+2) Requirements
+3) Usage
+4) License
+
+
+------------------------------------------------------------------------
+Overview
+
+maven-tree recurses through your maven projects and generates a graph
+from the declared dependencies.
+
+The generated dependencies file is in the GraphML format
+(http://graphml.graphdrawing.org/) and can be viewed / analyzed with
+applications like Gephi (http://gephi.github.io/). Gephi allows you to
+visualize the graph and calculate common graph metrics like for example
+the degree of edges or nodes.
 
 
 ------------------------------------------------------------------------
@@ -19,7 +33,10 @@ $ pip install .
 ------------------------------------------------------------------------
 Usage
 
-$ python maven-tree.py output.graphml root_dirs
+$ python maven-tree.py output.graphml path/to/maven_dirs
+
+For more options see:
+$ python maven-tree.py --help
 
 
 ------------------------------------------------------------------------

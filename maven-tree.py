@@ -1,5 +1,6 @@
 #!/usr/bin/python2
 
+import argparse
 import os
 import pygraphml
 import sys
@@ -131,5 +132,16 @@ class MavenModule(object):
     def __hash__(self):
         return hash(self.id)
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='maven dependency tree graph builder')
+
+    parser.add_argument('graph_output_file', metavar='GRAPH_OUTPUT_FILE', help='the generated graph is written to that file')
+
+    parser.add_argument('maven_module_paths', metavar='MAVEN_MODULE_DIR', nargs='+', help='directories which will be recursively searched for pom.xml files')
+
+    return parser.parse_args()
+
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2:])
+    args = parse_args()
+
+    main(args.graph_output_file, args.maven_module_paths)
