@@ -57,7 +57,20 @@ class MavenModule(object):
         self.artifact_id = artifact_id
         self.dependencies = set()
 
-    # TODO equals and hash functions
+        self._id = None
+
+    @property
+    def id(self):
+        if(self._id is None):
+            self._id = (self.package_id, self.artifact_id)
+
+        return self._id
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
 
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2:])
