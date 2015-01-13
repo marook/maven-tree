@@ -1,0 +1,14 @@
+maven-tree - maven dependency tree graph builder
+
+1) Requirements
+
+
+------------------------------------------------------------------------
+Requirements
+
+maven-tree require the pygraphml python module. Install pygraphml like
+this:
+
+$ git clone https://github.com/hadim/pygraphml.git
+$ cd pygraphml/
+$ pip install .
