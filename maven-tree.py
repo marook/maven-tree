@@ -10,12 +10,18 @@ MAVEN_NAMESPACES = {
     'mvn': 'http://maven.apache.org/POM/4.0.0',
 }
 
-def main(graph_output_path, pom_root_paths):
-    maven_modules = find_maven_modules(pom_root_paths)
+def main(args):
+    maven_modules = find_maven_modules(args.maven_module_paths)
 
-    graph = DependencyGraphBuilder().build_graph(maven_modules)
+    graph = pygraphml.Graph()
+    nodes_store = NodesStore(graph)
 
-    write_graph(graph_output_path, graph)
+    DependencyGraphBuilder(graph, nodes_store).build_graph(maven_modules)
+
+    if(args.include_parent_edges):
+        ParentEdgeBuilder(graph, nodes_store).build_graph(maven_modules)
+
+    write_graph(args.graph_output_path, graph)
 
 def find_maven_modules(pom_root_paths):
     for pom_root_path in pom_root_paths:
@@ -35,6 +41,13 @@ def parse_maven_module_from_pom(pom_path):
         raise Exception('Missing artifactId')
 
     maven_module = MavenModule(group_id, artifact_id)
+
+    parent_group_id, parent_artifact_id = parse_parent_artifact_ids_from_project_node(pom.getroot())
+    if(not parent_artifact_id is None):
+        if(parent_group_id is None):
+            raise Exception('Missing parent groupId')
+
+        maven_module.parent = MavenModule(parent_group_id, parent_artifact_id)
 
     maven_module.dependencies.update(parse_dependencies_from_pom(pom))
 
@@ -73,28 +86,12 @@ def get_child_node_value(parent_node, child_node_name):
 
     return None
 
-class DependencyGraphBuilder(object):
+class NodesStore(object):
 
-    def __init__(self):
-        self.graph = pygraphml.Graph()
+    def __init__(self, graph):
+        self.graph = graph
 
         self.maven_module_nodes = {}
-
-    def build_graph(self, maven_modules):
-        for maven_module in maven_modules:
-            maven_module_node = self.get_maven_module_node(maven_module)
-
-            self.add_dependency_edges(maven_module)
-
-        return self.graph
-
-    def add_dependency_edges(self, maven_module):
-        maven_module_node = self.get_maven_module_node(maven_module)
-
-        for dependency_module in maven_module.dependencies:
-            dependency_module_node = self.get_maven_module_node(dependency_module)
-
-            self.graph.add_edge(maven_module_node, dependency_module_node)
 
     def get_maven_module_node(self, maven_module):
         if(maven_module in self.maven_module_nodes):
@@ -107,6 +104,44 @@ class DependencyGraphBuilder(object):
 
             return maven_module_node
 
+class DependencyGraphBuilder(object):
+
+    def __init__(self, graph, nodes_store):
+        self.graph = graph
+        self.nodes_store = nodes_store
+
+    def build_graph(self, maven_modules):
+        for maven_module in maven_modules:
+            maven_module_node = self.nodes_store.get_maven_module_node(maven_module)
+
+            self.add_dependency_edges(maven_module)
+
+        return self.graph
+
+    def add_dependency_edges(self, maven_module):
+        maven_module_node = self.nodes_store.get_maven_module_node(maven_module)
+
+        for dependency_module in maven_module.dependencies:
+            dependency_module_node = self.nodes_store.get_maven_module_node(dependency_module)
+
+            self.graph.add_edge(maven_module_node, dependency_module_node)
+
+class ParentEdgeBuilder(object):
+
+    def __init__(self, graph, nodes_store):
+        self.graph = graph
+        self.nodes_store = nodes_store
+
+    def build_graph(self, maven_modules):
+        for maven_module in maven_modules:
+            if(maven_module.parent is None):
+                continue
+
+            maven_module_node = self.get_maven_module_node(maven_module)
+            parent_module_node = self.get_maven_module_node(maven_module.parent)
+
+            self.graph.add_edge(maven_module_node, parent_module_node)
+
 def write_graph(graph_output_path, graph):
     pygraphml.GraphMLParser().write(graph, graph_output_path)
 
@@ -116,6 +151,7 @@ class MavenModule(object):
         self.group_id = group_id
         self.artifact_id = artifact_id
         self.dependencies = set()
+        self.parent = None
 
         self._id = None
 
@@ -135,13 +171,15 @@ class MavenModule(object):
 def parse_args():
     parser = argparse.ArgumentParser(description='maven dependency tree graph builder')
 
-    parser.add_argument('graph_output_file', metavar='GRAPH_OUTPUT_FILE', help='the generated graph is written to that file')
+    parser.add_argument('graph_output_path', metavar='GRAPH_OUTPUT_FILE', help='the generated graph is written to that file')
 
     parser.add_argument('maven_module_paths', metavar='MAVEN_MODULE_DIR', nargs='+', help='directories which will be recursively searched for pom.xml files')
+
+    parser.add_argument('--include-parent-edges', dest='include_parent_edges', action='store_const', const=True, default=False, help='add a maven module\'s relation to it\'s parent module as edge in the graph (default: don\'t add them)')
 
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
 
-    main(args.graph_output_file, args.maven_module_paths)
+    main(args)
